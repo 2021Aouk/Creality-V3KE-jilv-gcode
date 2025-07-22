@@ -1,0 +1,50 @@
+
+;记录一下厂机归零逻辑：g28后默认零点在热床上，x-12，y-20到达最小限位，此时x＋5到热床y+15到热床，从热床角x＋228再多超限，y＋229再多撞螺丝。
+;显示的热床放模型是完全打印的，只是g代码会说超出热床。切片后预览模型会往左移，支撑如果在右边的话会显示在床上但实际已经超限了
+;问题反馈优化建议可以加qq群522185942
+;急律代码秉承原厂直接使用无需更改，不一定兼容第三方擦嘴套件马桶盖
+;开始和结束gcode都在txt里，分别复制进切片打印机设置
+
+;============开始gcode=============
+
+M220 S100 ;Reset Feedrate 
+M221 S100 ;Reset Flowrate 
+G21                     ;设定为毫米模式
+G90                     ;设定为绝对定位模式
+M82                     ;设定挤出机为绝对定位模式
+M140 S[bed_temperature_initial_layer_single] ;Set final bed temp  
+G28 
+G0 x-12  Y-5   F25000     ;喷嘴移到漏料位加热  
+M104 S[nozzle_temperature_initial_layer] ;Set final nozzle temp  
+M190 S[bed_temperature_initial_layer_single] ;Wait for bed temp to stabilize  
+M109 S[nozzle_temperature_initial_layer] ;Wait for nozzle temp to stabilize  
+G0 x-12  Y-10   F25000     ;喷嘴移到挤出位
+G1 Z0 F11000             ;床贴近喷嘴
+G92 E0.0                ;将E挤出机归零
+G1 E25 F200             ;Y189 F200          ; 为什么加了y靠近一点刷子就会挤出飞快？      #挤出23mm
+G4 P700               ;等待0.7秒钟,释放喷嘴压力
+G1 X-7 Y-4 F5000    ; E23.6              #x-7刚好压住热床
+G92 X0 Y0           ;设此处为零点
+G1 Z2 F25000                    ;抬喷嘴免得弱智prusa直接z0然后划着床过去，然后速度设高避免漏料
+G92 E0                         ;将E挤出机归零
+PRINT_START
+
+
+
+
+
+;============结束gcode=============
+
+G91 ;Relative positionning 
+G1 E-2 F2700 ;Retract a bit 
+G1 E-10 Z0.2 F2400 ;Retract and raise Z 
+G1 X5 Y5 F3000 ;Wipe out 
+G1 Z5 ;Raise Z more 
+G90 ;Absolute positionning 
+ 
+G1 X2 Y218 F3000 ;Present print 
+M106 S0 ;Turn-off fan 
+M104 S0 ;Turn-off hotend 
+M140 S0 ;Turn-off bed 
+ 
+M84 X Y E ;Disable all steppers but Z
